@@ -1,0 +1,8 @@
+x: x_i in Z^n.
+y: y_j in Z^n.
+q: q_ij in Z^(n*n).
+var: S_i,T_j in Zp^n; A,B,C,D,L in Zp.
+PublicKey: [A*D*S_i-B*C*S_i]_1 in G1^n; [T_j]_2 in G2^n.
+Enc: [L*A*D-L*B*C]_1 in G1; [D*x_i-L*C*S_i]_1,[-B*x_i+L*A*S_i]_1 in G1^n;[C*y_j-D*T_j]_2,[A*y_j-B*T_j]_2 in G2^n.
+KeyGen: [q_ij*S_i*T_j]_2 in G2.
+offset: A*D-B*C in Zp.

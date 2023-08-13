@@ -1,0 +1,8 @@
+x:x_i in Z^n.
+y:y_j in Z^n.
+q:q_ij in Z^(n*n).
+var: m1,m2,m3,m4,d11,d12,d21,d22,w11,w12,w21,w22,w31,w32,z11,z12,z21,z22,z31,z32,s,t,s1,s2,r,r1,r2,s11,s12 in Zp; a_i,b_j in Zp^n.
+PublicKey:[a_i*m1*m4-a_i*m2*m3]_1 in G1^n;[b_j]_2 in G2^n;[d11*m1*m4-d11*m2*m3]_1,[d12*(m1*m4-m2*m3)]_1,[(w11*d11+w12*d12)*(m1*m4-m2*m3)]_1,[(w21*d11+w22*d12)*(m1*m4-m2*m3)]_1,[(w31*d11+w32*d12)*(m1*m4-m2*m3)]_1 in G1;[d21]_2,[d22]_2,[z11*d21+z12*d22]_2,[z21*d21+z22*d22]_2,[z31*d21+z32*d22]_2 in G2.
+Enc:[x_i*m4-s*a_i*m2]_1,[s*a_i*m1-x_i*m3]_1 in G1^n;[y_j*m1+b_j*t*m3]_2,[y_j*m2+b_j*t*m4]_2 in G2^n;[d11*s1*(m1*m4-m2*m3)]_1,[d12*s1*(m1*m4-m2*m3)]_1,[(s*t+s1*w11*d11+s1*w12*d12)*(m1*m4-m2*m3)]_1,[(s11+s1*w21*d11+s1*w22*d12)*(m1*m4-m2*m3)]_1,[(s12+s1*w31*d11+s1*w32*d12)*(m1*m4-m2*m3)]_1 in G1;[d21*s2]_2,[d22*s2]_2,[s*t+s2*z11*d21+s2*z12*d22]_2,[s11+s2*z21*d21+s2*z22*d22]_2,[s12+s2*z31*d21+s2*z32*d22]_2 in G2.
+KeyGen:[q_ij*a_i*b_j-r]_2,[-r1]_2,[-r2]_2,[w11*(q_ij*a_i*b_j-r)-w21*r1-w31*r2]_2,[w12*(q_ij*a_i*b_j-r)-w22*r1-w32*r2]_2 in G2;[r*(m1*m4-m2*m3)]_1,[r1*(m1*m4-m2*m3)]_1,[r2*(m1*m4-m2*m3)]_1,[(z11*r+z21*r1+z31*r2)*(m1*m4-m2*m3)]_1,[(z12*r+z22*r1+z32*r2)*(m1*m4-m2*m3)]_1 in G1.
+offset: m1*m4-m2*m3 in Zp.
