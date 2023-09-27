@@ -16,4 +16,4 @@
 ##### Wee20:对应文中方案[9]
 ##### Wee20-new:对应文中方案[9]的简化
 ##### ggm-qfe-sim.sage:主程序,用来对以上方案进行GGM下可模拟安全的验证
-###### sage ggm-qfe-sim.sage.py
+>> sage ggm-qfe-sim.sage.py
