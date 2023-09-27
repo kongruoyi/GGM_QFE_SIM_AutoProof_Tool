@@ -6,6 +6,7 @@
 
 >Sagemath版本 = 9.80
 >>下载地址: https://www.sagemath.org/
+
 >运行:
 >> sage ggm-qfe-sim.sage.py
 
