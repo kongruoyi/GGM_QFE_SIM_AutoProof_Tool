@@ -2,7 +2,7 @@ x:x_i in Z^n.
 y:y_j in Z^n.
 q:q_ij in Z^(n*n).
 var: m1,m2,m3,m4,d,s,t,l,w in Zp; a_i,b_j in Zp^n.
-PublicKey:[a_i*m1*m4-a_i*m2*m3]_1 in G1^n;[d*m1*m4-d*m2*m3]_1, [d*w*m1*m4-d*w*m2*m3]_1 in G1;b_j in G2.
+PublicKey:[a_i*m1*m4-a_i*m2*m3]_1 in G1^n;[d*m1*m4-d*m2*m3]_1, [d*w*m1*m4-d*w*m2*m3]_1 in G1;[b_j]_2 in G2^n.
 Enc: [x_i*m4-m2*s*a_i]_1,[m1*s*a_i-x_i*m3]_1 in G1^n;[s*t*m1*m4-s*t*m2*m3+w*d*l*m1*m4-w*d*l*m2*m3]_1,[d*l*m1*m4-d*l*m2*m3]_1 in G1;[y_j*m1+b_j*t*m3]_2,[y_j*m2+b_j*t*m4]_2 in G2^n.
 KeyGen:[q_ij*a_i*b_j]_2,[w*q_ij*a_i*b_j]_2 in G2.
 offset: m1*m4-m2*m3 in Zp.
