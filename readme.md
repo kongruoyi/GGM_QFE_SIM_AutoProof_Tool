@@ -6,6 +6,8 @@
 
 >Sagemath版本 = 9.80
 >>下载地址: https://www.sagemath.org/
+>运行:
+>> sage ggm-qfe-sim.sage.py
 
 ### 文件描述：
 ##### BCFG17:对应文中方案[5]
@@ -16,4 +18,4 @@
 ##### Wee20:对应文中方案[9]
 ##### Wee20-new:对应文中方案[9]的简化
 ##### ggm-qfe-sim.sage:主程序,用来对以上方案进行GGM下可模拟安全的验证
->> sage ggm-qfe-sim.sage.py
+
