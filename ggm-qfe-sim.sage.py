@@ -15,7 +15,6 @@ class monomials:
         self.coeff = coeff
         self.h = h
 
-
 #读取文件并分析文件
 def read(name):
     G1_poly = []
