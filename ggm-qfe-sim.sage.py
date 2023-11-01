@@ -5,14 +5,7 @@ import copy
 import time
 import re
 
-#设置一个结构体，多项式及其系数
-class polys:
-    p = ''
-    coeff = ''
-    def __init__(self,p,coeff):
-        self.p = p
-        self.coeff = coeff
-
+#设置一个结构体，存放单项式及其系数
 class monomials:
     monomial = ''
     coeff = ''
