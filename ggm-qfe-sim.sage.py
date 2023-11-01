@@ -1,4 +1,3 @@
-#先不考虑offset的问题，这个之后可以再进行考虑
 import sympy as sy
 import numpy as np
 from sage.all import *
@@ -13,6 +12,16 @@ class polys:
     def __init__(self,p,coeff):
         self.p = p
         self.coeff = coeff
+
+class monomials:
+    monomial = ''
+    coeff = ''
+    h = ''
+    def __init__(self,monomial,coeff,h):
+        self.monomial = monomial
+        self.coeff = coeff
+        self.h = h
+
 
 #读取文件并分析文件
 def read(name):
@@ -55,7 +64,6 @@ def read(name):
     y_var = []
     q_var = []
     offset_poly = []
-    test_set = []
     for i in range(len(x)):
         param.append(x[i])
         tmp = tmp + x[i]
@@ -87,14 +95,7 @@ def read(name):
             y_var.append(globals()[param[i]])
         if i >= (len(x)+len(y)):
             q_var.append(globals()[param[i]])
-    #分解单独的x和y项
-    poly = vector(x_var)*vector(y_var)*vector(q_var)
-    poly_str = str(poly[0])
-    if poly_str.strip('q_ij*x_i*y_j') == '':
-        test_set.append('q_ij*x_i*y_j')
-    else:
-        tmp = poly_str.split('q_ij*x_i*y_j')[0][-1].split('+')
-        test_set.append(tmp)
+
     for i in range(len(variable)):
         globals()[variable[i]] = TT[i]
     
@@ -125,7 +126,7 @@ def read(name):
     if offset[0] != 'no':
         for i in offset:
             offset_poly.append(eval(i))
-    return G1_poly,G2_poly,test_set,offset_poly
+    return G1_poly,G2_poly,offset_poly
 
 #将G1中的多项式组合和G2中的多项式组合进行pairing.
 def parametric_completion(G1_poly,G2_poly,offset_poly):
@@ -141,14 +142,17 @@ def parametric_completion(G1_poly,G2_poly,offset_poly):
         for i in offset_poly:
             GT_poly.append(i)
     return GT_poly
-#提取GT中的变量组合.
-def monomial_combination(GT_poly):
+
+#提取GT中的变量组合和相关系数,并返回。
+def merge(GT_poly):
     monomial = []
-    poly = []
-    base = []
-    dict = {}
+    coeff = []
+    dict_merge = {}#用来合并同一变量组合的多项式的
+    dict_count = {}#用来累计次数的
+    dict_coeff = {}#用来累计系数的
     for i in GT_poly:
         monomial.append(i.monomials())
+        coeff.append(i.coefficients())
 #处理平方项问题，如果发现有大于2的项，则在后面添加一个新的只包含它的多项式，这样的话就不会被删掉了
     for i in range(len(monomial)):
         for j in range(len(monomial[i])):
@@ -156,129 +160,126 @@ def monomial_combination(GT_poly):
             for k in str_var.split('*'):
                 if '_' in k and '^' in k:
                     monomial.append([monomial[i][j]])
-    r = copy.deepcopy(monomial)
-#设置一个字典，删除只出现了一次的项
-    for i in range(len(r)):
-        for j in range(len(r[i])):
-            dict[r[i][j]] = 0
-        
+                    coeff.append([coeff[i][j]])
+#设置一个字典，首先先初始化
+    for i in range(len(monomial)):
+        for j in range(len(monomial[i])):
+            dict_merge[monomial[i][j]] = 0
+            dict_count[monomial[i][j]] = 0
+            dict_coeff[monomial[i][j]] = []
+    for i in range(len(monomial)):
+        for j in range(len(monomial[i])):
+            dict_count[monomial[i][j]] = dict_count[monomial[i][j]] + 1
+
+    set_monomial = []
+    for i in range(len(monomial)):
+        tmp = []
+        for j in range(len(monomial[i])):
+            tmp.append(monomials(monomial[i][j],var('h'+str(i))*coeff[i][j],var('h'+str(i))))
+        set_monomial.append(tmp)
+    
+    #两轮后,留下可以配对的变量组合
     round = 0
-    for i in range(len(r)):
-        for j in range(len(r[i])):
-            dict[r[i][j]] = dict[r[i][j]] + 1
-            if dict[r[i][j]] > round:
-                round = dict[r[i][j]]
-#================round rotation====================
-    g = 0
-    while(g < round):
-        for i in range(len(r)):
-            flag = 0
-            for j in range(len(r[i])):
-                if dict[r[i][j]] < 2:
-                    for k in range(len(r[i])):
-                        dict[r[i][k]] = dict[r[i][k]]-1
-                    flag = 1
+    while(round < 2):
+        for i in range(len(monomial)):
+            flag1 = 0
+            for j in range(len(monomial[i])):
+                if dict_count[monomial[i][j]] == 1 and (coeff[i][j] == 1 or coeff[i][j] == -1):
+                    flag1 = 1
                     break
-            if flag == 1:
-                r[i] = []
-        g = g + 1
-    #得到多项式和基
-    Poly_simplify = []
-    for i in range(len(GT_poly)):
-        if r[i] != []:
-            Poly_simplify.append(GT_poly[i])
-    for i in range(len(GT_poly),len(r)):
-        if r[i] != []:
-            Poly_simplify.append(r[i][0])
-    
-    for i in range(len(r)):
-        for j in range(len(r[i])):
-            if r[i][j] not in base:
-                base.append(r[i][j])
-    if base == []:
+            if flag1 == 1:
+                for k in range(len(monomial[i])):
+                    set_monomial[i][k] = monomials(monomial[i][k],0,0)
+                    dict_count[monomial[i][k]] = dict_count[monomial[i][k]] - 1
+        round = round + 1
+
+    for i in range(len(set_monomial)):
+        for j in range(len(set_monomial[i])):
+            dict_merge[set_monomial[i][j].monomial] = dict_merge[set_monomial[i][j].monomial]+set_monomial[i][j].coeff
+            dict_coeff[set_monomial[i][j].monomial].append(set_monomial[i][j].h)
+    #print(dict_merge) 是用来合并多项式的
+    #print(dict_coeff) 是用来存放多项式的系数的
+    return dict_merge,dict_coeff
+
+def verify(dict_merge,dict_coeff):    
+    solve_left_q = []#存放模拟器可以模拟的多项式
+    solve_left_xy = []#存放模拟器不能模拟的多项式
+    right_q = []#存放模拟器可以模拟的系数
+    right_xy = []#解出余下的系数值
+    solve_left_sub = []#将解出来的系数代入多项式中
+    for i in dict_merge.keys():
+        a = str(dict_merge[i]).replace("q_ij",'')
+        if (('x' not in a) and ('y' not in a)):
+            if dict_merge[i] != 0 :
+                solve_left_q.append(dict_merge[i])
+                right_q = right_q + dict_coeff[i]
+        else:
+            if dict_merge[i] != 0 :
+                solve_left_xy.append(dict_merge[i])
+                right_xy = right_xy + dict_coeff[i]
+    #先求带q的多项式的系数
+    Kernel_q = sy.solve(solve_left_q,right_q)
+    #判断
+    if Kernel_q == []:
         return "FAIL!"
-    return Poly_simplify
-
-def merge(Poly_simplify):
-    poly_monomials = []
-    poly_coeff = []
-    Merge = []#将系数赋值
-    right = []
-    coeff_tmp = []
-    solve_left = []
-    dict = {}
-    for i in Poly_simplify:
-        poly_monomials.append(i.monomials())
-        poly_coeff.append(i.coefficients())
-    #将系数赋值，并合并相同项的系数。
-    for i in range(len(poly_monomials)):
-        for j in range(len(poly_monomials[i])):
-            tmp = polys(poly_monomials[i][j],var('h'+str(i))*poly_coeff[i][j])
-            Merge.append(tmp)
-        right.append(var('h'+str(i)))
-    #得到要解的方程式和系数
-    for i in Merge:
-        dict[i.p] = []
-    for i in Merge:
-        dict[i.p].append(i.coeff)
-    
-    for value in dict.values():
-        coeff_tmp.append(value)
-
-    for i in range(len(coeff_tmp)):
-        tmp = 0
-        for j in range(len(coeff_tmp[i])):
-            tmp = tmp + coeff_tmp[i][j]
-        solve_left.append(tmp)
-    return solve_left,right
-
-#验证函数
-def verify(solve_left,right,result,test_set):
-    flag = 0
-    for key in result.keys():
-        if 'q_ij*x_i*y_j' in str(result[key]):
-            right.remove(key)
-            break
-    Kernel = sy.solve(solve_left,right)
-    print("Kernel:%s"%Kernel)
-    tmp_result = []
+    print("Kernel_q:")
+    print(Kernel_q)
+    right_tmp = list(set(right_xy) - set(right_q))
+    #代入
+    for i in solve_left_xy:
+        solve_left_sub.append(i.subs(Kernel_q))
+    #再次求解系数
+    Kernel = sy.solve(solve_left_sub,right_tmp)
+    #判断
+    print("Kernel_xy:")
+    print(Kernel)
+    #判断
+    if right_tmp!= [] and Kernel == []:
+        return "FAIL!"
+    #判断
+    flag = 1
     for i in Kernel.values():
-        tmp_result.append(str(i))
-    for i in tmp_result:
-        if 'q_ij*x_i*y_j' in i:
-            flag =1
+        if i == 0:
+            continue
+        if ('x' in str(i) and 'y' not in str(i)) or ('x' in str(i) and 'y' not in str(i)):
+            flag = 0
+        if 'x_i*y_j' in str(i):
+            a = str(i).replace("*x_i*y_j",'')
+            if 'q_ij' in a:
+                flag = 1
+            else:
+                for j in Kernel_q.values():
+                    if str(j) in (a+'/q_ij'):
+                        flag = 1
+                        break
+        if(flag == 0):
+            break
     if flag == 0:
-        return 'FAIL!'
-    for i in tmp_result:
-        for j in test_set:
-            i = i.replace(j,'')
-            i = i.replace("q_ij",'').replace("*",'')
-            if 'x_i' in i or 'y_j' in i:
-                return "FAIL!"
+        return "FAIL!"
+    #再次代入系数，这次如果都是0，则可以通过验证，否则验证失败
+    solve_verify_0 = []
+    for i in solve_left_sub:
+        solve_verify_0.append(i.subs(Kernel))
+    print("solve_verify_0:")
+    print(solve_verify_0)
+    for i in solve_verify_0:
+        if i != 0:
+            return "FAIL!" 
     return "PASS!"
-
+ 
 #启动函数
 def run(choose):
-    G1_poly, G2_poly,test_set,offset_poly = read(choose+'.txt')
-    print("=================Read Finished!========================:")
+    G1_poly, G2_poly,offset_poly = read(choose+'.txt')
+    print("=================Read Finished!========================")
     start = time.time()
     GT_poly = parametric_completion(G1_poly,G2_poly,offset_poly)
-    print("========Parametric_completion Finished!================:")
-    print("GT_poly:%s"%GT_poly)
-    Poly_simplify = monomial_combination(GT_poly)
-    print("========Monomial_combination Finished!=================:")
-    print("Poly_simplify:%s"%Poly_simplify)
-    if Poly_simplify == []:
-        return "FAIL!"
-    print("==============Merge Finished!==========================:")
-    solve_left,right = merge(Poly_simplify)
-    ans = sy.solve(solve_left,right)
-    if ans == []:
-        return "FAIL!"
-    Result = verify(solve_left,right,ans,test_set)
-    print("==============Verify Finished!=========================:")
-    print(Result)
-    print("=========================Time==========================:")
+    print("========Monomial_combination Finished!=================")
+    dict_merge,dict_coeff = merge(GT_poly)
+    print("==============Merge Finished!==========================")
+    result = verify(dict_merge,dict_coeff)
+    print("==============Verify Finished!=========================")
+    print(result)
+    print("=========================Time==========================")
     end = time.time()
     print(end-start)
 
@@ -298,7 +299,12 @@ if __name__ == '__main__':
     if choose == 'GQ-1':
         run(choose)
     if choose == 'GQ-2':
-        run(choose)    
+        run(choose)  
+
+
+
+        
+
 
 
 
