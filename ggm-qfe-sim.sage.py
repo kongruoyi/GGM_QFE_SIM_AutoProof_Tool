@@ -1,7 +1,5 @@
 import sympy as sy
-import numpy as np
 from sage.all import *
-import copy
 import time
 import re
 
@@ -15,10 +13,12 @@ class monomials:
         self.coeff = coeff
         self.h = h
 
+
 #读取文件并分析文件
 def read(name):
     G1_poly = []
     G2_poly = []
+    GT_poly = []
     list1 = [[],[],[],[],[],[],[],[]]
     count = 0
     file_object = open(name,'r')
@@ -98,6 +98,9 @@ def read(name):
         if i[-1] == '2':
             m = re.findall(r'\[(.*?)\]',i)[0]
             G2_poly.append(eval(m))
+        if i[-1] == 'T':
+            m = re.findall(r'\[(.*?)\]',i)[0]
+            GT_poly.append(eval(m))
     
     for i in enc:
         if i[-1] == '1':
@@ -106,6 +109,9 @@ def read(name):
         if i[-1] == '2':
             m = re.findall(r'\[(.*?)\]',i)[0]
             G2_poly.append(eval(m))
+        if i[-1] == 'T':
+            m = re.findall(r'\[(.*?)\]',i)[0]
+            GT_poly.append(eval(m))
 
     for i in keygen:
         if i[-1] == '1':
@@ -114,15 +120,18 @@ def read(name):
         if i[-1] == '2':
             m = re.findall(r'\[(.*?)\]',i)[0]
             G2_poly.append(eval(m))
+        if i[-1] == 'T':
+            m = re.findall(r'\[(.*?)\]',i)[0]
+            GT_poly.append(eval(m))
 
     if offset[0] != 'no':
         for i in offset:
             offset_poly.append(eval(i))
-    return G1_poly,G2_poly,offset_poly
 
-#将G1中的多项式组合和G2中的多项式组合进行pairing.
-def parametric_completion(G1_poly,G2_poly,offset_poly):
-    GT_poly = []
+    return G1_poly,G2_poly,GT_poly,offset_poly
+
+#将G1中的多项式组合和G2中的多项式组合进行pairing,添加到GT_poly中.
+def parametric_completion(G1_poly,G2_poly,GT_poly,offset_poly):
     G1_poly.append(G1_poly[0] * 0 + 1)
     G2_poly.append(G2_poly[0] * 0 + 1)
     for i in G1_poly:
@@ -135,17 +144,17 @@ def parametric_completion(G1_poly,G2_poly,offset_poly):
             GT_poly.append(i)
     return GT_poly
 
-#提取GT中的变量组合和相关系数,并返回。
+#提取GT中的变量组合和相关系数多项式,并返回。
 def merge(GT_poly):
     monomial = []
     coeff = []
-    dict_merge = {}#用来合并同一变量组合的多项式的
-    dict_count = {}#用来累计次数的
-    dict_coeff = {}#用来累计系数的
+    dict_merge = {}
+    dict_count = {}
+    dict_coeff = {}
     for i in GT_poly:
         monomial.append(i.monomials())
         coeff.append(i.coefficients())
-#处理平方项问题，如果发现有大于2的项，则在后面添加一个新的只包含它的多项式，这样的话就不会被删掉了
+
     for i in range(len(monomial)):
         for j in range(len(monomial[i])):
             str_var = str(monomial[i][j])
@@ -153,7 +162,7 @@ def merge(GT_poly):
                 if '_' in k and '^' in k:
                     monomial.append([monomial[i][j]])
                     coeff.append([coeff[i][j]])
-#设置一个字典，首先先初始化
+
     for i in range(len(monomial)):
         for j in range(len(monomial[i])):
             dict_merge[monomial[i][j]] = 0
@@ -170,7 +179,7 @@ def merge(GT_poly):
             tmp.append(monomials(monomial[i][j],var('h'+str(i))*coeff[i][j],var('h'+str(i))))
         set_monomial.append(tmp)
     
-    #两轮后,留下可以配对的变量组合
+
     round = 0
     while(round < 2):
         for i in range(len(monomial)):
@@ -192,13 +201,13 @@ def merge(GT_poly):
     #print(dict_merge) 是用来合并多项式的
     #print(dict_coeff) 是用来存放多项式的系数的
     return dict_merge,dict_coeff
-
+#验证
 def verify(dict_merge,dict_coeff):    
-    solve_left_q = []#存放模拟器可以模拟的多项式
-    solve_left_xy = []#存放模拟器不能模拟的多项式
-    right_q = []#存放模拟器可以模拟的系数
-    right_xy = []#解出余下的系数值
-    solve_left_sub = []#将解出来的系数代入多项式中
+    solve_left_q = []
+    solve_left_xy = []
+    right_q = []
+    right_xy = []
+    solve_left_sub = []
     for i in dict_merge.keys():
         a = str(dict_merge[i]).replace("q_ij",'')
         if (('x' not in a) and ('y' not in a)):
@@ -209,7 +218,7 @@ def verify(dict_merge,dict_coeff):
             if dict_merge[i] != 0 :
                 solve_left_xy.append(dict_merge[i])
                 right_xy = right_xy + dict_coeff[i]
-    #先求带q的多项式的系数
+    #先求带q的系数系数多项式的解
     Kernel_q = sy.solve(solve_left_q,right_q)
     #判断
     if Kernel_q == []:
@@ -220,7 +229,8 @@ def verify(dict_merge,dict_coeff):
     #代入
     for i in solve_left_xy:
         solve_left_sub.append(i.subs(Kernel_q))
-    #再次求解系数
+    print(solve_left_sub)
+    #再次求解含有消息向量的系数多项式的解
     Kernel = sy.solve(solve_left_sub,right_tmp)
     #判断
     print("Kernel_xy:")
@@ -248,7 +258,7 @@ def verify(dict_merge,dict_coeff):
             break
     if flag == 0:
         return "FAIL!"
-    #再次代入系数，这次如果都是0，则可以通过验证，否则验证失败
+    #再次代入，如果都是0多项式，则可以通过验证，否则验证失败
     solve_verify_0 = []
     for i in solve_left_sub:
         solve_verify_0.append(i.subs(Kernel))
@@ -261,10 +271,10 @@ def verify(dict_merge,dict_coeff):
  
 #启动函数
 def run(choose):
-    G1_poly, G2_poly,offset_poly = read(choose+'.txt')
+    G1_poly, G2_poly,GT_poly,offset_poly = read(choose+'.txt')
     print("=================Read Finished!========================")
     start = time.time()
-    GT_poly = parametric_completion(G1_poly,G2_poly,offset_poly)
+    GT_poly = parametric_completion(G1_poly,G2_poly,GT_poly,offset_poly)
     print("========Monomial_combination Finished!=================")
     dict_merge,dict_coeff = merge(GT_poly)
     print("==============Merge Finished!==========================")
@@ -291,12 +301,7 @@ if __name__ == '__main__':
     if choose == 'GQ-1':
         run(choose)
     if choose == 'GQ-2':
-        run(choose)  
-
-
-
-        
-
+        run(choose)   
 
 
 
