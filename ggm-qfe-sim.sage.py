@@ -218,6 +218,7 @@ def verify(dict_merge,dict_coeff):
             if dict_merge[i] != 0 :
                 solve_left_xy.append(dict_merge[i])
                 right_xy = right_xy + dict_coeff[i]
+        
     #先求带q的系数系数多项式的解
     Kernel_q = sy.solve(solve_left_q,right_q)
     #判断
@@ -229,7 +230,6 @@ def verify(dict_merge,dict_coeff):
     #代入
     for i in solve_left_xy:
         solve_left_sub.append(i.subs(Kernel_q))
-    print(solve_left_sub)
     #再次求解含有消息向量的系数多项式的解
     Kernel = sy.solve(solve_left_sub,right_tmp)
     #判断
@@ -239,19 +239,21 @@ def verify(dict_merge,dict_coeff):
     if right_tmp!= [] and Kernel == []:
         return "FAIL!"
     #判断
-    flag = 1
+    flag = 0
     for i in Kernel.values():
         if i == 0:
             continue
-        if ('x' in str(i) and 'y' not in str(i)) or ('x' in str(i) and 'y' not in str(i)):
-            flag = 0
-        if 'x_i*y_j' in str(i):
-            a = str(i).replace("*x_i*y_j",'')
-            if 'q_ij' in a:
-                flag = 1
-            else:
+        a = re.split(r'[+|-]',str(i))
+        for k in a:
+            if k == '':
+                continue
+            if ('x' in k and 'y' not in k) or ('x' in k and 'y' not in k):
+                flag = 0
+                break
+            if 'x_i*y_j' in k:
+                b = k.replace('*x_i*y_j','')
                 for j in Kernel_q.values():
-                    if str(j) in (a+'/q_ij'):
+                    if 'q_ij' in b or (b+'/q_ij') in str(j):
                         flag = 1
                         break
         if(flag == 0):
@@ -301,7 +303,7 @@ if __name__ == '__main__':
     if choose == 'GQ-1':
         run(choose)
     if choose == 'GQ-2':
-        run(choose)   
+        run(choose)       
 
 
 
